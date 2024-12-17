@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>光儲合一投資效益評估</title>
+  <!-- 讓手機可正常響應式顯示 -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Bootstrap 4（CDN） -->
+  <link
+    rel="stylesheet"
+    href="https://cdn.jsdelivr.net/npm/bootstrap@4.6.2/dist/css/bootstrap.min.css"
+  />
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+  <style>
+    body {
+      margin: 20px;
+      font-family: "Microsoft JhengHei", Arial, sans-serif;
+    }
+    h1, h2 {
+      color: #2B3856;
+    }
+    .section-block {
+      border: 1px solid #ccc;
+      padding: 15px;
+      margin-bottom: 15px;
+      background-color: #FAFAFA;
+    }
+    .form-group {
+      margin-bottom: 0.8rem;
+    }
+    .table thead th {
+      background-color: #f0f0f0;
+    }
+    .negative-value {
+      color: red;
+    }
+    .result-w-block p {
+      margin-bottom: 0.5rem;
+    }
+    #loginContainer {
+      max-width: 350px;
+      margin: 50px auto;
+      display: block;
+    }
+    #mainContent {
+      display: none; /* 登入前不顯示 */
+    }
+  </style>
+</head>
+
+<body>
+
+<div id="loginContainer">
+  <h1 class="text-center">登入系統</h1>
+  <div class="card">
+    <div class="card-body">
+      <div class="form-group">
+        <label>使用者名稱</label>
+        <input type="text" class="form-control" id="username" placeholder="輸入帳號名稱">
+      </div>
+      <div class="form-group">
+        <label>密碼</label>
+        <input type="password" class="form-control" id="password" placeholder="輸入密碼">
+      </div>
+      <button class="btn btn-primary w-100" onclick="login()">登入</button>
+    </div>
+  </div>
+</div>
+
+<div id="mainContent">
+  <h1 class="text-center">光儲合一投資效益評估</h1>
+
+  <!-- PV 相關參數 -->
+  <div class="section-block">
+    <h2>輸入參數 - PV 相關</h2>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>剩餘饋線容量 (kW)</label>
+        <input type="number" class="form-control" id="p3" value="1000">
+      </div>
+      <div class="form-group col-md-6">
+        <label>PV 容量 (kW)</label>
+        <input type="number" class="form-control" id="p2" value="2000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>年均日照量 (h/day)</label>
+        <input type="number" step="0.1" class="form-control" id="dailySun" value="3.0">
+      </div>
+      <div class="form-group col-md-6">
+        <label>年度晴天比例 (B, 0~1)</label>
+        <input type="number" step="0.1" class="form-control" id="sunnyRatio" value="0.7">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>初始 PV 電價 (F1_0, NTD/kWh)</label>
+        <input type="number" step="0.1" class="form-control" id="f1_0" value="4.0">
+      </div>
+      <div class="form-group col-md-6">
+        <label>電價年增長率 (%, e.g. 2%)</label>
+        <input type="number" step="0.1" class="form-control" id="f1_growth" value="2.0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>PV 逐年衰減率 (d_PV, %/year)</label>
+        <input type="number" step="0.1" class="form-control" id="decayPV" value="4.0">
+      </div>
+      <div class="form-group col-md-6">
+        <label>PV 建置成本 (NTD/kW)</label>
+        <input type="number" class="form-control" id="c2" value="45000">
+      </div>
+    </div>
+  </div>
+
+  <!-- BESS 相關參數 -->
+  <div class="section-block">
+    <h2>輸入參數 - BESS 相關</h2>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>BESS 初始效率 (η_BESS0, %)</label>
+        <input type="number" step="1" class="form-control" id="etaBess0" value="70">
+      </div>
+      <div class="form-group col-md-6">
+        <label>BESS 額定功率 (kW)</label>
+        <input type="number" class="form-control" id="pBess" value="750">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>BESS 放電時數 (hr)</label>
+        <input type="number" step="0.01" class="form-control" id="tBess" value="3">
+      </div>
+      <div class="form-group col-md-6">
+        <label>BESS 逐年衰減率 (d_BESS, %/year)</label>
+        <input type="number" step="0.1" class="form-control" id="decayBESS" value="0.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>容量獲標率 (A, 0~1)</label>
+        <input type="number" step="0.1" class="form-control" id="awardRate" value="0.8">
+      </div>
+      <div class="form-group col-md-6">
+        <label>BESS 容量費 (NTD/kW)</label>
+        <input type="number" step="0.1" class="form-control" id="fCap" value="9.1">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>BESS 能源費 (NTD/kWh)</label>
+        <input type="number" step="0.1" class="form-control" id="fEne" value="5.0">
+      </div>
+      <div class="form-group col-md-6">
+        <label>BESS 建置成本 (NTD/kWh)</label>
+        <input type="number" class="form-control" id="c1" value="21000">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>O&M 成本比率 (ζ, %)</label>
+        <input type="number" step="0.1" class="form-control" id="omRatio" value="2.0">
+      </div>
+      <div class="form-group col-md-6">
+        <label>BESS 周邊設備運轉電價 (NTD/kWh)</label>
+        <input type="number" step="0.1" class="form-control" id="pumpElecPrice" value="4.5">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-6">
+        <label>專案壽命 (L, 年)</label>
+        <input type="number" class="form-control" id="projectLifespan" value="20">
+      </div>
+      <div class="form-group col-md-6">
+        <label>折現率 (r, %/year)</label>
+        <input type="number" step="0.1" class="form-control" id="discountRate" value="5.0">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group col-md-12">
+        <button class="btn btn-primary w-100" onclick="calculateResult()">開始計算</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section-block result-w-block" id="dailyCalcSection" style="display: none;">
+    <h2>初始單日電能量計算結果</h2>
+    <p><strong>W1 (PV 日發電量):</strong> <span id="w1Val"></span> kWh/day</p>
+    <p><strong>W2 (BESS 容量):</strong> <span id="w2Val"></span> kWh</p>
+    <p><strong>W3 (BESS 可儲存的 PV 電量):</strong> <span id="w3Val"></span> kWh/day</p>
+    <p><strong>W4 (BESS 充滿所需 PV 電量):</strong> <span id="w4Val"></span> kWh/day</p>
+    <p><strong>W5 (PV 直售剩餘電量):</strong> <span id="w5Val"></span> kWh/day</p>
+    <p><strong>W6 (泵浦單日消耗電量):</strong> <span id="w6Val"></span> kWh/day</p>
+  </div>
+
+  <div class="section-block">
+    <h2>年度收益報表</h2>
+    <div id="resultArea" class="mt-3"></div>
+    <div class="mt-4">
+      <canvas id="myChart"></canvas>
+    </div>
+  </div>
+</div>
+
+<script>
+/** 簡易登入流程 */
+function login(){
+  const user = document.getElementById("username").value;
+  const pass = document.getElementById("password").value;
+  if(user==="PEWC" && pass==="PEWC1234"){
+    document.getElementById("loginContainer").style.display="none";
+    document.getElementById("mainContent").style.display="block";
+  } else {
+    alert("使用者名稱或密碼錯誤！");
+  }
+}
+
+function toCurrency(num){
+  if(!num) num=0;
+  let n = Math.round(num);
+  return "$NT " + n.toLocaleString("en-US");
+}
+
+// 計算NPV
+function computeNPV(cashFlowArr, discountRate){
+  let npv=0;
+  for(let t=0; t<cashFlowArr.length; t++){
+    npv += cashFlowArr[t]/Math.pow((1+discountRate), t);
+  }
+  return npv;
+}
+
+// IRR
+function computeIRR(cashFlowArr){
+  let lower=0, upper=1, eps=1e-7;
+  while((upper-lower)>eps){
+    let mid=(upper+lower)/2;
+    let npv=0;
+    for(let t=0; t<cashFlowArr.length; t++){
+      npv += cashFlowArr[t]/Math.pow((1+mid), t);
+    }
+    if(npv>0) lower=mid; else upper=mid;
+  }
+  return (upper+lower)/2;
+}
+
+function calculateResult(){
+  // 讀取使用者輸入
+  const P3 = parseFloat(document.getElementById('p3').value);
+  const P2 = parseFloat(document.getElementById('p2').value);
+
+  const dailySun = parseFloat(document.getElementById('dailySun').value);
+  const sunnyRatio = parseFloat(document.getElementById('sunnyRatio').value);
+
+  const F1_0 = parseFloat(document.getElementById('f1_0').value);
+  const f1_growth = parseFloat(document.getElementById('f1_growth').value)/100.0;
+
+  const d_PV = parseFloat(document.getElementById('decayPV').value)/100.0;
+  const etaBess0 = parseFloat(document.getElementById('etaBess0').value)/100.0;
+  const d_BESS = parseFloat(document.getElementById('decayBESS').value)/100.0;
+
+  const P_BESS = parseFloat(document.getElementById('pBess').value);
+  const t_BESS = parseFloat(document.getElementById('tBess').value);
+
+  const awardRate = parseFloat(document.getElementById('awardRate').value);
+  const F_cap = parseFloat(document.getElementById('fCap').value);
+  const F_ene = parseFloat(document.getElementById('fEne').value);
+
+  const L = parseInt(document.getElementById('projectLifespan').value);
+  const r = parseFloat(document.getElementById('discountRate').value)/100.0;
+  const zeta = parseFloat(document.getElementById('omRatio').value)/100.0;
+
+  const C2 = parseFloat(document.getElementById('c2').value);
+  const C1 = parseFloat(document.getElementById('c1').value);
+
+  const pumpElecPrice = parseFloat(document.getElementById('pumpElecPrice').value); // NTD/kWh
+
+  // P6 = 0.12 * P_BESS
+  const P6 = 0.12 * P_BESS;  
+  // tpump = 2 * t_BESS
+  const tpump = 2 * t_BESS;  
+  // W6_daily = P6 * tpump
+  const W6_daily = P6 * tpump; 
+
+  // -- 單日電能量計算 (W1~W5, W6) ----
+  // W1 = PV Daily Energy = P2 * dailySun
+  let W1 = P2 * dailySun; 
+  // W2 = BESS Capacity = P_BESS * t_BESS
+  let W2 = P_BESS * t_BESS;
+  // W3 = W1 * etaBess0 (若不考慮BESS容量上限)
+  let W3 = W1 * etaBess0;
+  // W4 = W2 / etaBess0 (BESS充滿所需PV量)
+  let W4 = W2 / etaBess0;
+  // W5 = max(0, W1 - W4)
+  let W5 = 0;
+  if(W3 > W2){
+    W5 = W1 - W4;
+  }
+
+  // 將 W1~W6 顯示在畫面 (不顯示小數點)
+  document.getElementById('dailyCalcSection').style.display = "block";
+  document.getElementById('w1Val').textContent = Math.round(W1).toLocaleString();
+  document.getElementById('w2Val').textContent = Math.round(W2).toLocaleString();
+  document.getElementById('w3Val').textContent = Math.round(W3).toLocaleString();
+  document.getElementById('w4Val').textContent = Math.round(W4).toLocaleString();
+  document.getElementById('w5Val').textContent = Math.round(W5).toLocaleString();
+  document.getElementById('w6Val').textContent = Math.round(W6_daily).toLocaleString();
+
+  // ---- Year 0 投資 (負值)
+  const Invest_PV = -(P2 * C2);
+  const C_BESS_0 = P_BESS * t_BESS;
+  const Invest_BESS = -(C_BESS_0 * C1);
+  const Invest_total = Invest_PV + Invest_BESS;
+
+  let yearArr = [0];
+  let pvGenArr = [0];    
+  let bessGenArr = [0];  
+  let pvLostArr = [0];   
+  let pumpLostArr = [0]; 
+  let pumpCostArr = [0];
+  let pvRevArr = [Invest_PV];
+  let bessRevArr = [Invest_BESS];
+  let totalRevArr = [Invest_total];
+  let omArr = [0];
+  let netArr = [Invest_total];
+  let cumArr = [Invest_total];
+
+  // 現金流 (0..L)
+  let cashFlow = [Invest_total];
+  let cumVal = Invest_total;
+
+  for(let i=1; i<=L; i++){
+    yearArr.push(i);
+
+    // 第 i 年 電價
+    let F1_i = F1_0 * Math.pow((1+f1_growth),(i-1));
+
+    // 第 i 年 PV annual
+    let SF_i = dailySun * Math.pow(1-d_PV,(i-1));
+    let E_PV_day = P2 * SF_i;
+    let E_PV_year = E_PV_day * 365 * sunnyRatio;
+
+    // BESS容量衰減
+    let C_BESS_i = C_BESS_0 * Math.pow((1-d_BESS),(i-1));
+    let etaBess_i = etaBess0 * Math.pow((1-d_BESS),(i-1));
+
+    let dailyBESS_need = C_BESS_i / etaBess_i;
+    let dailySurplus = E_PV_day>dailyBESS_need? (E_PV_day - dailyBESS_need) : 0;
+    let E_surplus_year = dailySurplus*365*sunnyRatio;
+    let E_BESS_year = (E_PV_day - dailySurplus)*etaBess_i*365*sunnyRatio;
+
+    let E_lost_year = (E_PV_day - E_PV_day*etaBess_i)*365*sunnyRatio;
+
+    // Pump Lost Energy
+    let pumpLostYear = W6_daily*365; 
+    let pumpCost = -(pumpLostYear*pumpElecPrice);
+
+    // PV 收益
+    let R_PV = E_surplus_year*F1_i;
+    // BESS 收益
+    let BESS_capacityFee = P_BESS*F_cap*awardRate;
+    let BESS_energyFee = E_BESS_year*F_ene;
+    let R_BESS = BESS_capacityFee+BESS_energyFee;
+
+    let R_total = R_PV + R_BESS;
+
+    // O&M年度費用(負值)
+    let OandM = -(Math.abs(Invest_total)*zeta);
+    let netIncome = R_total + OandM + pumpCost;
+
+    cumVal += netIncome;
+
+    pvGenArr.push(E_PV_year);
+    bessGenArr.push(E_BESS_year);
+    pvLostArr.push(E_lost_year);
+    pumpLostArr.push(pumpLostYear);
+    pumpCostArr.push(pumpCost);
+    pvRevArr.push(R_PV);
+    bessRevArr.push(R_BESS);
+    totalRevArr.push(R_total);
+    omArr.push(OandM);
+    netArr.push(netIncome);
+    cumArr.push(cumVal);
+
+    cashFlow.push(netIncome);
+  }
+
+  // NPV/IRR/ROI
+  let npv = computeNPV(cashFlow, r);
+  let irr = computeIRR(cashFlow);
+  let roi = npv/Math.abs(Invest_total);
+
+  // Payback Year
+  let paybackYear = "> " + L;
+  let runningSum=0;
+  for(let i=0; i<cashFlow.length; i++){
+    runningSum += cashFlow[i];
+    if(runningSum>=0 && i>0){
+      paybackYear=i;
+      break;
+    }
+  }
+
+  // 報表 HTML
+  let html = `
+  <div class="table-responsive">
+    <table class="table table-bordered">
+      <thead>
+        <tr>
+          <th>Year</th>
+          <th>PV Annual Gen (kWh)</th>
+          <th>BESS Annual Gen (kWh)</th>
+          <th>PV Lost Energy (kWh)</th>
+          <th>Pump Lost Energy (kWh)</th>
+          <th>PV Revenue</th>
+          <th>BESS Revenue</th>
+          <th>Gross Revenue</th>
+          <th>Pump Operating Cost</th>
+          <th>O&M Cost</th>
+          <th>Net Income</th>
+          <th>Cumulative CF</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+  for(let i=0; i<=L; i++){
+    let pvLostStr   = pvLostArr[i]>0 ? "-"+Math.round(pvLostArr[i]).toLocaleString() : "0";
+    let pumpLostStr = pumpLostArr[i]>0 ? "-"+Math.round(pumpLostArr[i]).toLocaleString() : "0";
+
+    html+=`
+      <tr>
+        <td>${i}</td>
+        <td>${Math.round(pvGenArr[i]).toLocaleString()}</td>
+        <td>${Math.round(bessGenArr[i]).toLocaleString()}</td>
+        <td class="negative-value">${pvLostStr}</td>
+        <td class="negative-value">${pumpLostStr}</td>
+        <td>${toCurrency(pvRevArr[i])}</td>
+        <td>${toCurrency(bessRevArr[i])}</td>
+        <td>${toCurrency(totalRevArr[i])}</td>
+        <td class="negative-value">${toCurrency(pumpCostArr[i])}</td>
+        <td class="negative-value">${toCurrency(omArr[i])}</td>
+        <td>${toCurrency(netArr[i])}</td>
+        <td>${toCurrency(cumArr[i])}</td>
+      </tr>
+    `;
+  }
+  html+=`
+    </tbody></table>
+  </div>
+  <h5>NPV：${toCurrency(npv.toFixed(0))}</h5>
+  <h5>IRR：${(irr*100).toFixed(2)}%</h5>
+  <h5>ROI：${(roi*100).toFixed(2)}%</h5>
+  <h5>Payback Year：${paybackYear}</h5>
+  `;
+  document.getElementById("resultArea").innerHTML = html;
+
+  // 圖表 (Bar1 => PV + BESS Revenue, Bar2 => Pump Operating Cost + O&M Cost, 折線 => Net Income)
+  let labels = [];
+  let barRevPV = [];
+  let barRevBESS = [];
+  let barCostPumpOM = [];
+  let lineNetIncome = [];
+
+  for(let i=1; i<=L; i++){
+    labels.push("Year "+i);
+    barRevPV.push(pvRevArr[i]>0 ? pvRevArr[i] : 0);
+    barRevBESS.push(bessRevArr[i]>0 ? bessRevArr[i] : 0);
+
+    // Pump+O&M
+    let costSum = Math.abs(pumpCostArr[i] + omArr[i]);
+    barCostPumpOM.push(costSum);
+
+    lineNetIncome.push(netArr[i]);
+  }
+
+  let ctx = document.getElementById('myChart').getContext('2d');
+  if(window.myChartInstance){
+    window.myChartInstance.destroy();
+  }
+
+  window.myChartInstance = new Chart(ctx, {
+    type:'bar',
+    data:{
+      labels: labels,
+      datasets:[
+        {
+          label:'PV Revenue',
+          data:barRevPV,
+          backgroundColor:'#4CAF50',
+          stack:'stackRev',
+          yAxisID:'yLeft'
+        },
+        {
+          label:'BESS Revenue',
+          data:barRevBESS,
+          backgroundColor:'#2196F3',
+          stack:'stackRev',
+          yAxisID:'yLeft'
+        },
+        {
+          label:'Pump+O&M Cost',
+          data:barCostPumpOM,
+          backgroundColor:'#f44336',
+          stack:'stackCost',
+          yAxisID:'yLeft'
+        },
+        {
+          type:'line',
+          label:'Net Income',
+          data:lineNetIncome,
+          borderColor:'#FFC107',
+          backgroundColor:'#FFC107',
+          yAxisID:'yRight',
+          tension:0.2,
+          fill:false,
+          order:0
+        }
+      ]
+    },
+    options:{
+      responsive:true,
+      scales:{
+        yLeft:{
+          type:'linear',
+          position:'left',
+          title:{ display:true, text:'Revenue/Cost (NTD)' },
+          min:0
+        },
+        yRight:{
+          type:'linear',
+          position:'right',
+          title:{ display:true, text:'Net Income (NTD)' },
+          grid:{ drawOnChartArea:false },
+          min:0
+        }
+      },
+      plugins:{
+        tooltip:{
+          callbacks:{
+            label: function(context){
+              let val = context.parsed.y||0;
+              return context.dataset.label+": "+toCurrency(val.toFixed(0));
+            }
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+
+</body>
+</html>
