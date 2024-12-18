@@ -83,13 +83,13 @@
         <input type="number" class="form-control" id="p3" value="1000">
       </div>
       <div class="form-group col-md-6">
-        <label>PV 容量 (kW)</label>
+        <label>PV 容量 (kWp)</label>
         <input type="number" class="form-control" id="p2" value="2000">
       </div>
     </div>
     <div class="form-row">
       <div class="form-group col-md-6">
-        <label>年均日照量 (h/day)</label>
+        <label>PV 年均日照量 (kWh/kWp/day)</label>
         <input type="number" step="0.1" class="form-control" id="dailySun" value="3.0">
       </div>
       <div class="form-group col-md-6">
@@ -148,7 +148,7 @@
         <input type="number" step="0.1" class="form-control" id="awardRate" value="0.8">
       </div>
       <div class="form-group col-md-6">
-        <label>BESS 容量費 (NTD/kW)</label>
+        <label>BESS 容量費 (NTD/kWh)</label>
         <input type="number" step="0.1" class="form-control" id="fCap" value="9.1">
       </div>
     </div>
@@ -192,10 +192,10 @@
   <div class="section-block result-w-block" id="dailyCalcSection" style="display: none;">
     <h2>初始單日電能量計算結果</h2>
     <p><strong>W1 (PV 日發電量):</strong> <span id="w1Val"></span> kWh/day</p>
-    <p><strong>W2 (BESS 容量):</strong> <span id="w2Val"></span> kWh</p>
+    <p><strong>W2 (BESS 裝置容量):</strong> <span id="w2Val"></span> kWh</p>
     <p><strong>W3 (BESS 可儲存的 PV 電量):</strong> <span id="w3Val"></span> kWh/day</p>
     <p><strong>W4 (BESS 充滿所需 PV 電量):</strong> <span id="w4Val"></span> kWh/day</p>
-    <p><strong>W5 (PV 直售剩餘電量):</strong> <span id="w5Val"></span> kWh/day</p>
+    <p><strong>W5 (PV 剩餘電量):</strong> <span id="w5Val"></span> kWh/day</p>
     <p><strong>W6 (泵浦單日消耗電量):</strong> <span id="w6Val"></span> kWh/day</p>
   </div>
 
@@ -281,8 +281,8 @@ function calculateResult(){
 
   const pumpElecPrice = parseFloat(document.getElementById('pumpElecPrice').value); // NTD/kWh
 
-  // P6 = 0.12 * P_BESS
-  const P6 = 0.12 * P_BESS;  
+  // P6 = 0.08 * P_BESS, 充放電時Pump運轉功率約為20 kW, 佔單一電池櫃模組250kW的8%
+  const P6 = 0.08 * P_BESS;  
   // tpump = 2 * t_BESS
   const tpump = 2 * t_BESS;  
   // W6_daily = P6 * tpump
