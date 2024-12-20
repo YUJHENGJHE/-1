@@ -1335,7 +1335,7 @@ function calculateResult(){
     let pumpCost = -(pumpLostYear*pumpElecPrice);
 
     let R_PV = E_surplus_year*F1_i;
-    let BESS_capacityFee = P_BESS*F_cap*awardRate;
+    let BESS_capacityFee = E_BESS_year*F_cap*awardRate;
     let BESS_energyFee = E_BESS_year*F_ene;
     let R_BESS = BESS_capacityFee+BESS_energyFee;
     let R_total = R_PV + R_BESS;
